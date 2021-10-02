@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SolutionApp
 {
@@ -10,32 +8,15 @@ namespace SolutionApp
         public string MissingDigit(string str)
         {
             var equation = new Equation(str);
-            string xValue;
-            if (equation.LeftOperand.Contains('x'))
+            var xValue = equation switch
             {
-                xValue = SolveForX(leftOperand: equation.Result,
-                    rightOperand: equation.RightOperand,
-                    _operator: equation.Operator,
-                    xPos: equation.LeftOperand.IndexOf('x'),
-                    invert: true).ToString();
-            }
-            else if (equation.RightOperand.Contains('x'))
-            {
-                if (equation.Operator.Equals('-') || equation.Operator.Equals('/'))
-                {
-                    xValue = SolveForX(equation.LeftOperand, equation.Result, equation.Operator, equation.RightOperand.IndexOf('x')).ToString();
-                }
-                else
-                {
-                    xValue = SolveForX(equation.Result, equation.LeftOperand, equation.Operator, equation.RightOperand.IndexOf('x'), true).ToString();
-                }
-            }
-            else
-            {
-                xValue = SolveForX(equation.LeftOperand, equation.RightOperand, equation.Operator, equation.Result.IndexOf('x')).ToString();
-            }
+                { } e when e.LeftOperand.Contains('x') => SolveForX(e.Result, e.RightOperand, e.Operator, e.LeftOperand.IndexOf('x'), true),
+                { Operator: '-' or '/' } e when e.RightOperand.Contains('x') => SolveForX(e.LeftOperand, e.Result, e.Operator, e.RightOperand.IndexOf('x')),
+                { } e when e.RightOperand.Contains('x') => SolveForX(equation.Result, equation.LeftOperand, equation.Operator, equation.RightOperand.IndexOf('x'), true),
+                _ => SolveForX(equation.LeftOperand, equation.RightOperand, equation.Operator, equation.Result.IndexOf('x'))
+            };
 
-            return xValue;
+            return xValue.ToString();
         }
 
         private static char SolveForX(string leftOperand, string rightOperand, char _operator, int xPos, bool invert = false)
@@ -68,10 +49,11 @@ namespace SolutionApp
 
                 str = str.ToLower();
                 if (!str.Contains("x")) throw new ArgumentException($"{nameof(str)} does not contain 'x'.");
-                //Get operator
                 Operator = operators.Where(o => str.Contains(o)).FirstOrDefault();
 
-                //Split str with the operator and equal sign
+                if (!operators.Any(x => str.Contains(x)))
+                    throw new ArgumentException($"{nameof(str)} does not contain a valid operator.");
+
                 var strArray = str.Split(new char[] { Operator, '=' });
 
                 LeftOperand = strArray[0].Trim();
